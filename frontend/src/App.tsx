@@ -3,10 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import axios from "./axios";
 import { RootState, AppDispatch } from "./store/store.ts";
 import { setAccessToken, clearAccessToken } from "./slices/authSlice";
+import { AxiosError } from "axios";
 import "./App.css";
 
 function App() {
   const [username, setUsername] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const dispatch = useDispatch<AppDispatch>();
 
@@ -14,8 +16,10 @@ function App() {
     try {
       const response = await axios.post("/login", { username });
       dispatch(setAccessToken(response.data.accessToken));
+      setError(null);
     } catch (error) {
       console.error("Login failed:", error);
+      setError("Login failed.");
     }
   };
 
@@ -23,8 +27,9 @@ function App() {
     try {
       await axios.post("/logout");
       dispatch(clearAccessToken());
+      setError(null);
     } catch (error) {
-      console.error("Logout failed:", error);
+      setError("Logout failed.");
     }
   };
 
@@ -32,8 +37,14 @@ function App() {
     try {
       const response = await axios.post("/token");
       dispatch(setAccessToken(response.data.accessToken));
+      setError(null);
     } catch (error) {
       console.error("Token refresh failed:", error);
+      if (error instanceof AxiosError) {
+        setError(error.response?.data?.message || "Token refresh failed.");
+      } else {
+        setError("An unexpected error occurred.");
+      }
     }
   };
 
@@ -41,12 +52,16 @@ function App() {
     <div className="app-container">
       <div className="login-container">
         <h1>JWT Authentication Example</h1>
+        <p>
+          Write any username to login. The server will return an access token
+        </p>
         <input
           type="text"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
+        {error && <p className="error">{error}</p>}
         <div
           style={{
             display: "flex",

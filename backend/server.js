@@ -53,11 +53,14 @@ app.post("/token", (req, res) => {
   const { refreshToken } = req.cookies;
 
   if (!refreshToken || !refreshTokens.includes(refreshToken)) {
-    return res.sendStatus(403);
+    return res.status(403).json({ message: "Your credentials are incorrect" });
   }
 
   jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err)
+      return res
+        .status(403)
+        .json({ message: "Your session has expired. Please log in again." });
 
     const accessToken = jwt.sign(
       { username: user.username },
